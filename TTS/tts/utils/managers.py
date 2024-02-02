@@ -327,8 +327,8 @@ class EmbeddingManager(BaseIDManager):
             self.encoder_config, model_path, eval=True, use_cuda=use_cuda, cache=True
         )
         self.encoder_ap = AudioProcessor(**self.encoder_config.audio)
-
-    def compute_embedding_from_clip(self, wav_file: Union[str, List[str]]) -> list:
+        
+    def compute_embedding_from_clip(self, wav_file: Union[str, List[str], np.array]) -> list:
         """Compute a embedding from a given audio file.
 
         Args:
@@ -338,8 +338,12 @@ class EmbeddingManager(BaseIDManager):
             list: Computed embedding.
         """
 
-        def _compute(wav_file: str):
-            waveform = self.encoder_ap.load_wav(wav_file, sr=self.encoder_ap.sample_rate)
+        def _compute(wav_file: Union[str, np.array]):
+            if isinstance(wav_file, str):
+                waveform = self.encoder_ap.load_wav(wav_file, sr=self.encoder_ap.sample_rate)
+            else:
+                waveform = wav_file
+                waveform.dtype = np.float32
             if not self.encoder_config.model_params.get("use_torch_spec", False):
                 m_input = self.encoder_ap.melspectrogram(waveform)
                 m_input = torch.from_numpy(m_input)

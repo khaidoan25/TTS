@@ -8,7 +8,8 @@ from typing import List
 import pandas as pd
 from tqdm import tqdm
 
-from lhotse import CutSet
+from datasets import load_dataset
+import json
 
 ########################
 # DATASETS
@@ -324,25 +325,24 @@ def common_voice(root_path, meta_file, ignored_speakers=None):
 
 def qasr(root_path, meta_files=None, ignored_speakers=None):
     items = []
-    if meta_files:
-        meta_files = [os.path.join(root_path, meta_files)]
-        
-    for meta_file in meta_files:
-        cuts = CutSet.from_file(meta_file)
-        for cut in cuts:
-            speaker_id = cut.supervisions[0].speaker
-            text = cut.supervisions[0].text
-            wav_file = cut.recording.sources[0].source
+    with open(f"{root_path}/{meta_files}", "r") as f:
+        train_speaker_ids = json.load(f)["train"]
+    dataset = load_dataset(root_path)["train"]
+    i = 0
+    for sample in dataset:
+        if sample["speaker_id"] in train_speaker_ids:
             items.append(
                 {
-                    "text": text,
-                    "audio_file": wav_file,
-                    "speaker_name": f"QASR_{speaker_id}",
-                    "root_path": root_path
+                    "text": sample["transcription"],
+                    "audio_file": sample["audio"]["array"],
+                    "speaker_name": sample["speaker_id"],
+                    "root_path": None,
+                    "audio_filename": sample["audio"]["path"]
                 }
             )
-    for item in items:
-        assert os.path.exists(item["audio_file"]), f" [!] wav files don't exist - {item['audio_file']}"
+        i += 1
+        if i % 100 == 0:
+            break
     return items
 
 
