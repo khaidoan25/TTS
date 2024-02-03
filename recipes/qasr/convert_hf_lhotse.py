@@ -9,6 +9,7 @@ import os
 import pandas as pd
 import argparse
 from tqdm import tqdm
+import numpy as np
 
 def main(args):
     speaker_df = pd.read_csv("data/speakers.tsv", sep="\t", index_col=None)
