@@ -8,7 +8,7 @@ from typing import List
 import pandas as pd
 from tqdm import tqdm
 
-from datasets import load_dataset
+from lhotse import CutSet
 import json
 
 ########################
@@ -325,24 +325,21 @@ def common_voice(root_path, meta_file, ignored_speakers=None):
 
 def qasr(root_path, meta_files=None, ignored_speakers=None):
     items = []
-    with open(f"{root_path}/{meta_files}", "r") as f:
-        train_speaker_ids = json.load(f)["train"]
-    dataset = load_dataset(root_path)["train"]
-    i = 0
-    for sample in dataset:
-        if sample["speaker_id"] in train_speaker_ids:
-            items.append(
-                {
-                    "text": sample["transcription"],
-                    "audio_file": sample["audio"]["array"],
-                    "speaker_name": sample["speaker_id"],
-                    "root_path": None,
-                    "audio_filename": sample["audio"]["path"]
-                }
-            )
-        i += 1
-        if i % 100 == 0:
-            break
+    with open(f"{root_path}/speaker_id_split.json", "r") as f:
+        unseen_speaker_ids = json.load(f)["test"]["unseen"]
+    cuts = CutSet.from_file(f"{root_path}/qasr_cuts.jsonl.gz")
+    for sample in cuts:
+        if sample.supervisions[0].speaker in unseen_speaker_ids:
+            continue
+        items.append(
+            {
+                "text": sample.supervisions[0].text,
+                "audio_file": sample.recording.sources[0].source,
+                "speaker_name": sample.supervisions[0].speaker,
+                "root_path": None,
+                "audio_unique_name": sample.id
+            }
+        )
     return items
 
 
