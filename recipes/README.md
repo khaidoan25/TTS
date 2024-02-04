@@ -20,3 +20,19 @@ python TTS/bin/resample.py --input_dir recipes/vctk/VCTK/wav48_silence_trimmed -
 If you train a new model using TTS, feel free to share your training to expand the list of recipes.
 
 You can also open a new discussion and share your progress with the 🐸 community.
+
+## Train AraTTS on QASR
+
+- Run `convert_hf_lhotse.py` to download QASR dataset from huggingface
+and convert it to lhotse manifests.
+
+```console
+python convert_hf_lhotse.py \
+    --hf_dir UBC-NLP/QASR \
+    --lhotse_dir <lhotse_directory> \ # find a free disk space to store extracted wav files
+    --output_dir ./data # directory to store lhotse manifests
+```
+
+- Run `train_yourtts.py` to start training. Modify `DATA_PATH` variable, must the the absolute path to `./data` folder.
+
+- *Note*: need at least 128G mem ram to store the speaker embedding matrix.

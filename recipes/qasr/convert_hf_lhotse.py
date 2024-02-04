@@ -2,7 +2,8 @@ from datasets import load_dataset
 from lhotse import (
     Recording, SupervisionSegment,
     RecordingSet, SupervisionSet,
-    fix_manifests, validate_recordings_and_supervisions
+    fix_manifests, validate_recordings_and_supervisions,
+    CutSet
 )
 from scipy.io.wavfile import write
 import os
@@ -53,13 +54,21 @@ def main(args):
     recordings = RecordingSet.from_recordings(recording_list)
     recordings, supervisions = fix_manifests(recordings, supervisions)
     validate_recordings_and_supervisions(recordings, supervisions)
-    supervisions.to_file("test_data/qasr_supervisions.jsonl.gz")
-    recordings.to_file("test_data/qasr_recordings.jsonl.gz")
+    supervisions.to_file(f"{args.output_dir}/qasr_supervisions.jsonl.gz")
+    recordings.to_file(f"{args.output_dir}/qasr_recordings.jsonl.gz")
+    cuts = CutSet.from_manifests(
+        recordings=recordings,
+        supervisions=supervisions
+    )
+    cuts.to_file(f"{args.output_dir}/qasr_cuts.jsonl.gz")
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--hf_dir")
     parser.add_argument("--lhotse_dir")
+    parser.add_argument("--output_dir")
     
     args = parser.parse_args()
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
     main(args)
