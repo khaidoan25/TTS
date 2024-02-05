@@ -13,6 +13,9 @@ from tqdm import tqdm
 import numpy as np
 
 def main(args):
+    is_copy = True
+    if len(os.listdir(args.lhotse_dir)) == 27590:
+        is_copy = False
     speaker_df = pd.read_csv("data/speakers.tsv", sep="\t", index_col=None)
     spk2att = {}
     for _, row in speaker_df.iterrows():
@@ -31,10 +34,11 @@ def main(args):
         if not os.path.exists(speaker_dir):
             os.makedirs(speaker_dir)
         wav_path = f"{speaker_dir}/{sample['audio']['path']}"
-        write(
-            wav_path,
-            sample['audio']['sampling_rate'],
-            sample['audio']['array'].astype(np.float32))
+        if is_copy:
+            write(
+                wav_path,
+                sample['audio']['sampling_rate'],
+                sample['audio']['array'].astype(np.float32))
         recording = Recording.from_file(wav_path)
         supervision = SupervisionSegment(
             id=recording.id,
@@ -71,4 +75,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
+    if not os.path.exists(args.lhotse_dir):
+        os.makedirs(args.lhotse_dir)
     main(args)
