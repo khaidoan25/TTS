@@ -31,4 +31,3 @@ else
 fi
 
 python -m trainer.distribute --gpus "0,1,2,3" --script train_yourtts.py --data_dir $output_dir --log_dir $log_dir
-# python train_yourtts.py

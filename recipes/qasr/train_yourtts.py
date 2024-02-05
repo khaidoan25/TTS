@@ -185,24 +185,6 @@ config = VitsConfig(
             "2134F589_7E88_4076_B97F_2C3B4B15BFBD_speaker1_align",
             None,
             "ar",
-        ],
-        [
-            "وحصلت حرب لبنان ووجدت صعوبة في التكيف ،",
-            "3ACA7BF1_235E_4ACE_B627_71D5495AE524_speaker37_align",
-            None,
-            "ar"
-        ],
-        [
-            "في أول يوم العيد حسب الشريعة الإسلامية إلى ثالث يوم العيد قبل المغرب ،",
-            "E73FBBC7_40FA_4225_9E0C_8C8D51AFF9BF_speaker25_align",
-            None,
-            "ar"
-        ],
-        [
-            "لكنني لا أريده أن يكبر ليقتل ويسفك دماء الأوزبك بل ليحيا حياةً طيّبة ،",
-            "078784AC_0275_4DF2_B06C_E104C03D5EAB_speaker19_align",
-            None,
-            "ar"
         ]
     ],
     # Enable the weighted sampler
