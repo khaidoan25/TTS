@@ -7,10 +7,11 @@
 #SBATCH --gres=gpu:4
 #SBATCH --qos=gpu-8
 #SBATCH --output=qasr_training.log
+#SBATCH --nodelist=gpu-05
 
 
 hf_dir="UBC-NLP/QASR"
-lhotse_dir="tmp/QASR/lhotse_dir"
+lhotse_dir="/tmp/QASR/lhotse_dir"
 output_dir="/home/chiyu.zhang/tts/work_dir/aratts/TTS/recipes/qasr/data"
 hf_home="/l/users/chiyu.zhang/hf_cache"
 log_dir="/tmp/QASR/logs"
