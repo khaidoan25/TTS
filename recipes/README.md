@@ -33,6 +33,8 @@ python convert_hf_lhotse.py \
     --output_dir ./data # directory to store lhotse manifests
 ```
 
-- Run `train_yourtts.py` to start training. Modify `DATA_PATH` variable, must the the absolute path to `./data` folder.
+- Run `train_yourtts.py` is the training script.
+
+- Modify variables in `qasr_train.sh` for training.
 
 - *Note*: need at least 128G mem ram to store the speaker embedding matrix.
