@@ -1,4 +1,5 @@
 import os
+import argparse
 
 import torch
 from trainer import Trainer, TrainerArgs
@@ -21,6 +22,13 @@ torch.set_num_threads(24)
     If you are interested in multilingual training, we have commented on parameters on the VitsArgs class instance that should be enabled for multilingual training.
     In addition, you will need to add the extra datasets following the VCTK as an example.
 """
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--log_dir")
+parser.add_argument("--data_dir")
+
+args = parser.parse_args()
+
 CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 # Name of the run for the Trainer
@@ -28,7 +36,7 @@ RUN_NAME = "YourTTS-AR-QASR"
 
 # Path where you want to save the models outputs (configs, checkpoints and tensorboard logs)
 # OUT_PATH = os.path.dirname(os.path.abspath(__file__))  # "/raid/coqui/Checkpoints/original-YourTTS/"
-OUT_PATH = "/tmp/QASR/logs"
+OUT_PATH = args.log_dir
 
 # If you want to do transfer learning and speedup your training you can set here the path to the original YourTTS model
 RESTORE_PATH = None  # "/root/.local/share/tts/tts_models--multilingual--multi-dataset--your_tts/model_file.pth"
@@ -37,7 +45,7 @@ RESTORE_PATH = None  # "/root/.local/share/tts/tts_models--multilingual--multi-d
 SKIP_TRAIN_EPOCH = False
 
 # Set here the batch size to be used in training and evaluation
-BATCH_SIZE = 8
+BATCH_SIZE = 32
 EPOCHS = 100
 
 # Training Sampling rate and the target sampling rate for resampling the downloaded dataset (Note: If you change this you might need to redownload the dataset !!)
@@ -48,7 +56,7 @@ SAMPLE_RATE = 16000
 MAX_AUDIO_LEN_IN_SECONDS = 20
 
 #TODO: Modify data path here
-DATA_PATH = ""
+DATA_PATH = args.data_dir
 
 # init configs
 qasr_config = BaseDatasetConfig(
@@ -198,7 +206,7 @@ config = VitsConfig(
         ]
     ],
     # Enable the weighted sampler
-    use_weighted_sampler=True,
+    # use_weighted_sampler=True,
     # Ensures that all speakers are seen in the training batch equally no matter how many samples each speaker has
     weighted_sampler_attrs={"speaker_name": 1.0},
     weighted_sampler_multipliers={},
