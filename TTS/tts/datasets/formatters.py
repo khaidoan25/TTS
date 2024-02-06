@@ -337,7 +337,7 @@ def qasr(root_path, meta_files=None, ignored_speakers=None):
                 "audio_file": sample.recording.sources[0].source,
                 "speaker_name": sample.supervisions[0].speaker,
                 "root_path": None,
-                "audio_unique_name": sample.supervisions[0].speaker
+                "audio_unique_name": sample.supervisions[0].recording_id
             }
         )
     return items
