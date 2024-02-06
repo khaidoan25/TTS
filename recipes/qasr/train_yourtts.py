@@ -36,7 +36,10 @@ RUN_NAME = "YourTTS-AR-QASR"
 
 # Path where you want to save the models outputs (configs, checkpoints and tensorboard logs)
 # OUT_PATH = os.path.dirname(os.path.abspath(__file__))  # "/raid/coqui/Checkpoints/original-YourTTS/"
-OUT_PATH = args.log_dir
+
+#TODO: Modify paths here
+OUT_PATH = "/tmp/QASR/logs"
+DATA_PATH = "/home/chiyu.zhang/tts/work_dir/aratts/TTS/recipes/qasr/data" # as same as manifests_dir in training script
 
 # If you want to do transfer learning and speedup your training you can set here the path to the original YourTTS model
 RESTORE_PATH = None  # "/root/.local/share/tts/tts_models--multilingual--multi-dataset--your_tts/model_file.pth"
@@ -45,7 +48,7 @@ RESTORE_PATH = None  # "/root/.local/share/tts/tts_models--multilingual--multi-d
 SKIP_TRAIN_EPOCH = False
 
 # Set here the batch size to be used in training and evaluation
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 EPOCHS = 100
 
 # Training Sampling rate and the target sampling rate for resampling the downloaded dataset (Note: If you change this you might need to redownload the dataset !!)
@@ -55,8 +58,6 @@ SAMPLE_RATE = 16000
 # Max audio length in seconds to be used in training (every audio bigger than it will be ignored)
 MAX_AUDIO_LEN_IN_SECONDS = 20
 
-#TODO: Modify data path here
-DATA_PATH = args.data_dir
 
 # init configs
 qasr_config = BaseDatasetConfig(

@@ -35,6 +35,6 @@ python convert_hf_lhotse.py \
 
 - Run `train_yourtts.py` is the training script.
 
-- Modify variables in `qasr_train.sh` for training.
+- Modify variables in `qasr_train.sh` for training. Also the `OUT_PATH` and `DATA_PATH` variables in `train_yourtts.py` script.
 
 - *Note*: need at least 128G mem ram to store the speaker embedding matrix.
