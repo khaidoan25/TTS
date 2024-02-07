@@ -11,35 +11,17 @@ import pandas as pd
 import argparse
 from tqdm import tqdm
 import numpy as np
+import multiprocessing as mp
+from pathlib import Path
 
-def main(args):
-    is_copy = True
-    if len(os.listdir(args.lhotse_dir)) == 27590:
-        is_copy = False
-    speaker_df = pd.read_csv("data/speakers.tsv", sep="\t", index_col=None)
-    spk2att = {}
-    for _, row in speaker_df.iterrows():
-        spk2att[row["speaker_id"]] = {
-            "name": row["name"],
-            "normalized_name": row["normalized_name"],
-            "gender": row["gender"],
-            "unique": row["unique"]
-        }
-
-    dataset = load_dataset(args.hf_dir)["train"]
-    recording_list = []
-    supervision_list = []
-    for sample in tqdm(dataset, desc="Generating lhotse samples"):
-        speaker_dir = f"{args.lhotse_dir}/{sample['speaker_id']}"
-        if not os.path.exists(speaker_dir):
-            os.makedirs(speaker_dir)
-        wav_path = f"{speaker_dir}/{sample['audio']['path']}"
-        if is_copy:
-            write(
-                wav_path,
-                sample['audio']['sampling_rate'],
-                sample['audio']['array'].astype(np.float32))
-        recording = Recording.from_file(wav_path)
+def get_rec_sup(sample):
+    if sample["is_copy"]:
+        write(
+            sample["wav_path"],
+            sample['audio']['sampling_rate'],
+            sample['audio']['array'].astype(np.float32))
+    if sample["add_manifest"]:
+        recording = Recording.from_file(sample["wav_path"])
         supervision = SupervisionSegment(
             id=recording.id,
             recording_id=recording.id,
@@ -49,17 +31,99 @@ def main(args):
             channel=0,
             speaker=sample['speaker_id'],
             language='Arabic',
-            gender=spk2att.get(sample['speaker_id']).get("gender"),
-            custom=spk2att.get(sample['speaker_id'])
+            gender=sample["gender"],
+            custom=sample["custom"]
         )
-        recording_list.append(recording)
-        supervision_list.append(supervision)
-    supervisions = SupervisionSet.from_segments(supervision_list)
-    recordings = RecordingSet.from_recordings(recording_list)
-    recordings, supervisions = fix_manifests(recordings, supervisions)
-    validate_recordings_and_supervisions(recordings, supervisions)
-    supervisions.to_file(f"{args.output_dir}/qasr_supervisions.jsonl.gz")
-    recordings.to_file(f"{args.output_dir}/qasr_recordings.jsonl.gz")
+    else:
+        recording = None
+        supervision = None
+    
+    return {"recording": recording, "supervision": supervision}
+
+def main(args):
+    speaker_df = pd.read_csv("data/speakers.tsv", sep="\t", index_col=None)
+    spk2att = {}
+    for _, row in speaker_df.iterrows():
+        spk2att[row["speaker_id"]] = {
+            "name": row["name"],
+            "normalized_name": row["normalized_name"],
+            "gender": row["gender"],
+            "unique": row["unique"]
+        }
+    # Get existed files
+    existed_files = []
+    for file in Path(args.lhotse_dir).rglob("*.wav"):
+        existed_files.append(str(file))
+        
+    # Get existed manifests
+    existed_manifests = []
+    if os.path.exists(f"{args.output_dir}/qasr_recordings.jsonl.gz"):
+        old_recs = RecordingSet.from_file(f"{args.output_dir}/qasr_recordings.jsonl.gz")
+        old_sups = SupervisionSet.from_file(f"{args.output_dir}/qasr_supervisions.jsonl.gz")
+        for rec in old_recs:
+            existed_manifests.append(rec.sources[0].source)
+        recording_list = list(old_recs)
+        supervision_list = list(old_sups)
+    else:
+        recording_list = []
+        supervision_list = []
+
+    dataset = load_dataset(args.hf_dir)["train"]
+    if args.debugging:
+        num_tasks = int(len(dataset)/50)
+        print(f"Run with a portion of data, {num_tasks} samples")
+    else:
+        num_tasks = len(dataset)
+    tasks = []
+    i = 0
+    for sample in tqdm(dataset, desc="Generating lhotse samples"):
+        speaker_dir = f"{args.lhotse_dir}/{sample['speaker_id']}"
+        if not os.path.exists(speaker_dir):
+            os.makedirs(speaker_dir)
+        wav_path = f"{speaker_dir}/{sample['audio']['path']}"
+        if wav_path in existed_files:
+            sample['is_copy'] = False
+        else:
+            sample['is_copy'] = True
+        if wav_path in existed_manifests:
+            sample['add_manifest'] = False
+        else:
+            sample['add_manifest'] = True
+        sample['wav_path'] = wav_path
+        sample['gender'] = spk2att.get(sample['speaker_id']).get("gender")
+        sample['custom'] = spk2att.get(sample['speaker_id'])
+        tasks.append(sample)
+        i += 1
+        if i % num_tasks == 0:
+            break
+        
+    pool = mp.Pool(os.cpu_count())
+    for ret in tqdm(
+        pool.imap_unordered(get_rec_sup, tasks),
+        total=len(tasks),
+        desc="Generating lhotse manifests"
+    ):
+        if ret["recording"] is not None:
+            recording_list.append(ret["recording"])
+            supervision_list.append(ret["supervision"])
+            
+        if len(recording_list) % 10000 == 0:            
+            supervisions = SupervisionSet.from_segments(supervision_list)
+            recordings = RecordingSet.from_recordings(recording_list)
+            recordings, supervisions = fix_manifests(recordings, supervisions)
+            validate_recordings_and_supervisions(recordings, supervisions)
+            supervisions.to_file(f"{args.output_dir}/qasr_supervisions.jsonl.gz")
+            recordings.to_file(f"{args.output_dir}/qasr_recordings.jsonl.gz")
+            
+    # Check last batch
+    if len(recording_list) != 0:
+        supervisions = SupervisionSet.from_segments(supervision_list)
+        recordings = RecordingSet.from_recordings(recording_list)
+        recordings, supervisions = fix_manifests(recordings, supervisions)
+        validate_recordings_and_supervisions(recordings, supervisions)
+        supervisions.to_file(f"{args.output_dir}/qasr_supervisions.jsonl.gz")
+        recordings.to_file(f"{args.output_dir}/qasr_recordings.jsonl.gz")
+    
     cuts = CutSet.from_manifests(
         recordings=recordings,
         supervisions=supervisions
@@ -71,6 +135,7 @@ if __name__ == "__main__":
     parser.add_argument("--hf_dir")
     parser.add_argument("--lhotse_dir")
     parser.add_argument("--output_dir")
+    parser.add_argument("--debugging", action="store_true")
     
     args = parser.parse_args()
     if not os.path.exists(args.output_dir):

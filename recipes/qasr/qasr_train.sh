@@ -25,7 +25,7 @@ log() {
 
 if [ ! -f $output_dir/qasr_cuts.jsonl.gz ]; then
   log "Prepare QASR manifestes!"
-  python convert_hf_lhotse.py --hf_dir $hf_dir --lhotse_dir $lhotse_dir --output_dir $manifests_dir
+  python convert_hf_lhotse.py --hf_dir $hf_dir --lhotse_dir $lhotse_dir --output_dir $manifests_dir --debugging
 else
   log "QASR manifests already existed!"
 fi
