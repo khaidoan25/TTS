@@ -23,12 +23,6 @@ torch.set_num_threads(24)
     In addition, you will need to add the extra datasets following the VCTK as an example.
 """
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--log_dir")
-parser.add_argument("--data_dir")
-
-args = parser.parse_args()
-
 CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 # Name of the run for the Trainer
@@ -39,7 +33,8 @@ RUN_NAME = "YourTTS-AR-QASR"
 
 #TODO: Modify paths here
 OUT_PATH = "/tmp/QASR/logs"
-DATA_PATH = "/home/chiyu.zhang/tts/work_dir/aratts/TTS/recipes/qasr/data" # as same as manifests_dir in training script
+DATA_PATH = "/home/chiyu.zhang/tts/work_dir/aratts/TTS/recipes/qasr/test_mp" # as same as manifests_dir in training script
+DEBUG = False
 
 # If you want to do transfer learning and speedup your training you can set here the path to the original YourTTS model
 RESTORE_PATH = None  # "/root/.local/share/tts/tts_models--multilingual--multi-dataset--your_tts/model_file.pth"
@@ -132,6 +127,24 @@ model_args = VitsArgs(
 VOCAB_FILE = f"{DATA_PATH}/vocab.txt"
 vocab = FairseqVocab(VOCAB_FILE)
 
+if DEBUG:
+    test_sentences = []
+else:
+    test_sentences = [
+        [
+            "قرر الرئيس محمد حسني مبارك تخليه عن منصب رئيس الجمهورية ..",
+            "972C30A4_A941_4CEA_8844_45EFE75FBEDF_speaker3_align",
+            None,
+            "ar",
+        ],
+        [
+            "الذي يتجه جنوباً صوب العاصمة دمشق ،",
+            "2134F589_7E88_4076_B97F_2C3B4B15BFBD_speaker1_align",
+            None,
+            "ar",
+        ]
+    ]
+
 # General training config, here you can change the batch size and others useful parameters
 config = VitsConfig(
     output_path=OUT_PATH,
@@ -174,20 +187,7 @@ config = VitsConfig(
     cudnn_benchmark=False,
     max_audio_len=SAMPLE_RATE * MAX_AUDIO_LEN_IN_SECONDS,
     mixed_precision=False,
-    test_sentences=[
-        [
-            "قرر الرئيس محمد حسني مبارك تخليه عن منصب رئيس الجمهورية ..",
-            "972C30A4_A941_4CEA_8844_45EFE75FBEDF_speaker3_align",
-            None,
-            "ar",
-        ],
-        [
-            "الذي يتجه جنوباً صوب العاصمة دمشق ،",
-            "2134F589_7E88_4076_B97F_2C3B4B15BFBD_speaker1_align",
-            None,
-            "ar",
-        ]
-    ],
+    test_sentences=test_sentences,
     # Enable the weighted sampler
     # use_weighted_sampler=True,
     # Ensures that all speakers are seen in the training batch equally no matter how many samples each speaker has

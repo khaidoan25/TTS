@@ -107,7 +107,7 @@ def main(args):
             recording_list.append(ret["recording"])
             supervision_list.append(ret["supervision"])
             
-        if len(recording_list) % 10000 == 0:            
+        if len(recording_list) % 10000 == 0:
             supervisions = SupervisionSet.from_segments(supervision_list)
             recordings = RecordingSet.from_recordings(recording_list)
             recordings, supervisions = fix_manifests(recordings, supervisions)
