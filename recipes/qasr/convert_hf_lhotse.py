@@ -76,6 +76,7 @@ def main(args):
         num_tasks = len(dataset)
     tasks = []
     i = 0
+    pool = mp.Pool(os.cpu_count())
     for sample in tqdm(dataset, desc="Generating lhotse samples"):
         speaker_dir = f"{args.lhotse_dir}/{sample['speaker_id']}"
         if not os.path.exists(speaker_dir):
@@ -94,29 +95,39 @@ def main(args):
         sample['custom'] = spk2att.get(sample['speaker_id'])
         tasks.append(sample)
         i += 1
-        if i % num_tasks == 0:
-            break
         
-    pool = mp.Pool(os.cpu_count())
-    for ret in tqdm(
-        pool.imap_unordered(get_rec_sup, tasks),
-        total=len(tasks),
-        desc="Generating lhotse manifests"
-    ):
-        if ret["recording"] is not None:
-            recording_list.append(ret["recording"])
-            supervision_list.append(ret["supervision"])
-            
-        if len(recording_list) % 10000 == 0:
+        if i % int(num_tasks/50) == 0:
+            for ret in tqdm(
+                pool.imap(get_rec_sup, tasks),
+                total=len(tasks),
+                desc="Generating lhotse manifests"
+            ):
+                if ret["recording"] is not None:
+                    recording_list.append(ret["recording"])
+                    supervision_list.append(ret["supervision"])
+                    
+            tasks = []
             supervisions = SupervisionSet.from_segments(supervision_list)
             recordings = RecordingSet.from_recordings(recording_list)
             recordings, supervisions = fix_manifests(recordings, supervisions)
             validate_recordings_and_supervisions(recordings, supervisions)
             supervisions.to_file(f"{args.output_dir}/qasr_supervisions.jsonl.gz")
             recordings.to_file(f"{args.output_dir}/qasr_recordings.jsonl.gz")
+                
+        if i % num_tasks == 0:
+            break
             
     # Check last batch
-    if len(recording_list) != 0:
+    if len(tasks) != 0:
+        for ret in tqdm(
+            pool.imap(get_rec_sup, tasks),
+            total=len(tasks),
+            desc="Generating lhotse manifests"
+        ):
+            if ret["recording"] is not None:
+                recording_list.append(ret["recording"])
+                supervision_list.append(ret["supervision"])
+                
         supervisions = SupervisionSet.from_segments(supervision_list)
         recordings = RecordingSet.from_recordings(recording_list)
         recordings, supervisions = fix_manifests(recordings, supervisions)
@@ -124,6 +135,8 @@ def main(args):
         supervisions.to_file(f"{args.output_dir}/qasr_supervisions.jsonl.gz")
         recordings.to_file(f"{args.output_dir}/qasr_recordings.jsonl.gz")
     
+    pool.close()
+    pool.join()
     cuts = CutSet.from_manifests(
         recordings=recordings,
         supervisions=supervisions
