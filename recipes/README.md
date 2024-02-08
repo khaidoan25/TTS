@@ -21,7 +21,7 @@ If you train a new model using TTS, feel free to share your training to expand t
 
 You can also open a new discussion and share your progress with the 🐸 community.
 
-## Train AraTTS on QASR
+## Train YourTTS on QASR
 
 - Run `convert_hf_lhotse.py` to download QASR dataset from huggingface
 and convert it to lhotse manifests.
@@ -38,3 +38,11 @@ python convert_hf_lhotse.py \
 - Modify variables in `qasr_train.sh` for training. Also the `DEBUG`, `OUT_PATH`, and `DATA_PATH` variables in `train_yourtts.py` script (line 40).
 
 - *Note*: need at least 128G mem ram to store the speaker embedding matrix.
+
+## Finetune XTTS on QASR
+
+- You can use the same manifest file from YourTTS training `qasr_cuts.jsonl.gz`.
+
+- The steps to finetune XTTS is the same as training YourTTS.
+
+- Remember to modify variables in `train_gpt_xtts.py`
