@@ -1,4 +1,5 @@
 import os
+import argparse
 
 import torch
 from trainer import Trainer, TrainerArgs
@@ -8,7 +9,7 @@ from TTS.bin.resample import resample_files
 from TTS.config.shared_configs import BaseDatasetConfig
 from TTS.tts.configs.vits_config import VitsConfig
 from TTS.tts.datasets import load_tts_samples
-from TTS.tts.models.vits import CharactersConfig, Vits, VitsArgs, VitsAudioConfig
+from TTS.tts.models.vits import CharactersConfig, Vits, VitsArgs, VitsAudioConfig, FairseqVocab
 from TTS.utils.downloaders import download_vctk
 
 torch.set_num_threads(24)
@@ -21,6 +22,7 @@ torch.set_num_threads(24)
     If you are interested in multilingual training, we have commented on parameters on the VitsArgs class instance that should be enabled for multilingual training.
     In addition, you will need to add the extra datasets following the VCTK as an example.
 """
+
 CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 # Name of the run for the Trainer
@@ -28,7 +30,11 @@ RUN_NAME = "YourTTS-AR-QASR"
 
 # Path where you want to save the models outputs (configs, checkpoints and tensorboard logs)
 # OUT_PATH = os.path.dirname(os.path.abspath(__file__))  # "/raid/coqui/Checkpoints/original-YourTTS/"
+
+#TODO: Modify paths here
 OUT_PATH = "/tmp/QASR/logs"
+DATA_PATH = "/home/chiyu.zhang/tts/work_dir/aratts/TTS/recipes/qasr/test_mp" # as same as manifests_dir in training script
+DEBUG = False
 
 # If you want to do transfer learning and speedup your training you can set here the path to the original YourTTS model
 RESTORE_PATH = None  # "/root/.local/share/tts/tts_models--multilingual--multi-dataset--your_tts/model_file.pth"
@@ -37,32 +43,24 @@ RESTORE_PATH = None  # "/root/.local/share/tts/tts_models--multilingual--multi-d
 SKIP_TRAIN_EPOCH = False
 
 # Set here the batch size to be used in training and evaluation
-BATCH_SIZE = 32
+BATCH_SIZE = 64
+EPOCHS = 100
 
 # Training Sampling rate and the target sampling rate for resampling the downloaded dataset (Note: If you change this you might need to redownload the dataset !!)
 # Note: If you add new datasets, please make sure that the dataset sampling rate and this parameter are matching, otherwise resample your audios
 SAMPLE_RATE = 16000
 
 # Max audio length in seconds to be used in training (every audio bigger than it will be ignored)
-MAX_AUDIO_LEN_IN_SECONDS = 10
+MAX_AUDIO_LEN_IN_SECONDS = 20
 
-# ### Download VCTK dataset
-# VCTK_DOWNLOAD_PATH = os.path.join(CURRENT_PATH, "VCTK")
-# # Define the number of threads used during the audio resampling
-# NUM_RESAMPLE_THREADS = 10
-# # Check if VCTK dataset is not already downloaded, if not download it
-# if not os.path.exists(VCTK_DOWNLOAD_PATH):
-#     print(">>> Downloading VCTK dataset:")
-#     download_vctk(VCTK_DOWNLOAD_PATH)
-#     resample_files(VCTK_DOWNLOAD_PATH, SAMPLE_RATE, file_ext="flac", n_jobs=NUM_RESAMPLE_THREADS)
 
 # init configs
 qasr_config = BaseDatasetConfig(
     formatter="qasr",
     dataset_name="qasr",
-    meta_file_train="cuts_all_clean.jsonl.gz",
+    meta_file_train="",
     meta_file_val="",
-    path="data/",
+    path=DATA_PATH,
     language="ar"
 )
 
@@ -99,8 +97,6 @@ for dataset_conf in DATASETS_CONFIG_LIST:
         )
     D_VECTOR_FILES.append(embeddings_file)
 
-exit()
-
 # Audio config used in training.
 audio_config = VitsAudioConfig(
     sample_rate=SAMPLE_RATE,
@@ -128,6 +124,27 @@ model_args = VitsArgs(
     # embedded_language_dim=4,
 )
 
+VOCAB_FILE = f"{DATA_PATH}/vocab.txt"
+vocab = FairseqVocab(VOCAB_FILE)
+
+if DEBUG:
+    test_sentences = []
+else:
+    test_sentences = [
+        [
+            "قرر الرئيس محمد حسني مبارك تخليه عن منصب رئيس الجمهورية ..",
+            "972C30A4_A941_4CEA_8844_45EFE75FBEDF_speaker3_align",
+            None,
+            "ar",
+        ],
+        [
+            "الذي يتجه جنوباً صوب العاصمة دمشق ،",
+            "2134F589_7E88_4076_B97F_2C3B4B15BFBD_speaker1_align",
+            None,
+            "ar",
+        ]
+    ]
+
 # General training config, here you can change the batch size and others useful parameters
 config = VitsConfig(
     output_path=OUT_PATH,
@@ -154,23 +171,15 @@ config = VitsConfig(
     target_loss="loss_1",
     print_eval=False,
     use_phonemes=False,
-    phonemizer="espeak",
-    phoneme_language="en",
     compute_input_seq_cache=True,
-    add_blank=True,
+    add_blank=False,
     text_cleaner="multilingual_cleaners",
     characters=CharactersConfig(
-        characters_class="TTS.tts.models.vits.VitsCharacters",
-        pad="_",
-        eos="&",
-        bos="*",
-        blank=None,
-        characters="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\u00af\u00b7\u00df\u00e0\u00e1\u00e2\u00e3\u00e4\u00e6\u00e7\u00e8\u00e9\u00ea\u00eb\u00ec\u00ed\u00ee\u00ef\u00f1\u00f2\u00f3\u00f4\u00f5\u00f6\u00f9\u00fa\u00fb\u00fc\u00ff\u0101\u0105\u0107\u0113\u0119\u011b\u012b\u0131\u0142\u0144\u014d\u0151\u0153\u015b\u016b\u0171\u017a\u017c\u01ce\u01d0\u01d2\u01d4\u0430\u0431\u0432\u0433\u0434\u0435\u0436\u0437\u0438\u0439\u043a\u043b\u043c\u043d\u043e\u043f\u0440\u0441\u0442\u0443\u0444\u0445\u0446\u0447\u0448\u0449\u044a\u044b\u044c\u044d\u044e\u044f\u0451\u0454\u0456\u0457\u0491\u2013!'(),-.:;? ",
-        punctuations="!'(),-.:;? ",
-        phonemes="",
-        is_unique=True,
-        is_sorted=True,
+        characters_class="TTS.tts.models.vits.FairseqVocab",
+        pad="[PAD]",
+        vocab_dict=vocab.vocab,
     ),
+    epochs=EPOCHS,
     phoneme_cache_path=None,
     precompute_num_workers=12,
     start_by_longest=True,
@@ -178,40 +187,9 @@ config = VitsConfig(
     cudnn_benchmark=False,
     max_audio_len=SAMPLE_RATE * MAX_AUDIO_LEN_IN_SECONDS,
     mixed_precision=False,
-    test_sentences=[
-        [
-            "It took me quite a long time to develop a voice, and now that I have it I'm not going to be silent.",
-            "VCTK_p277",
-            None,
-            "en",
-        ],
-        [
-            "Be a voice, not an echo.",
-            "VCTK_p239",
-            None,
-            "en",
-        ],
-        [
-            "I'm sorry Dave. I'm afraid I can't do that.",
-            "VCTK_p258",
-            None,
-            "en",
-        ],
-        [
-            "This cake is great. It's so delicious and moist.",
-            "VCTK_p244",
-            None,
-            "en",
-        ],
-        [
-            "Prior to November 22, 1963.",
-            "VCTK_p305",
-            None,
-            "en",
-        ],
-    ],
+    test_sentences=test_sentences,
     # Enable the weighted sampler
-    use_weighted_sampler=True,
+    # use_weighted_sampler=True,
     # Ensures that all speakers are seen in the training batch equally no matter how many samples each speaker has
     weighted_sampler_attrs={"speaker_name": 1.0},
     weighted_sampler_multipliers={},
@@ -219,20 +197,25 @@ config = VitsConfig(
     speaker_encoder_loss_alpha=9.0,
 )
 
+# Init the model
+print("> Initializing Vits model")
+model = Vits.init_from_config(config)
+print("> Finish initializing Vits model")
+
 # Load all the datasets samples and split traning and evaluation sets
 train_samples, eval_samples = load_tts_samples(
     config.datasets,
     eval_split=True,
     eval_split_max_size=config.eval_split_max_size,
-    eval_split_size=config.eval_split_size,
+    eval_split_size=config.eval_split_size
 )
-
-# Init the model
-model = Vits.init_from_config(config)
 
 # Init the trainer and 🚀
 trainer = Trainer(
-    TrainerArgs(restore_path=RESTORE_PATH, skip_train_epoch=SKIP_TRAIN_EPOCH),
+    TrainerArgs(
+        restore_path=RESTORE_PATH,
+        skip_train_epoch=SKIP_TRAIN_EPOCH,
+    ),
     config,
     output_path=OUT_PATH,
     model=model,

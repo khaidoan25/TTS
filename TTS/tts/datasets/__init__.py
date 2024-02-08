@@ -61,7 +61,9 @@ def add_extra_keys(metadata, language, dataset_name):
         # add language name
         item["language"] = language
         # add unique audio name
-        if isinstance(item["audio_file"], str):
+        if item.get("audio_unique_name", None):
+            continue
+        elif isinstance(item["audio_file"], str):
             relfilepath = os.path.splitext(os.path.relpath(item["audio_file"], item["root_path"]))[0]
         else:
             relfilepath = item["audio_filename"].split(".")[0]
