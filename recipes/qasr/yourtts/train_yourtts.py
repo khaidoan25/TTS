@@ -32,12 +32,12 @@ RUN_NAME = "YourTTS-AR-QASR"
 # OUT_PATH = os.path.dirname(os.path.abspath(__file__))  # "/raid/coqui/Checkpoints/original-YourTTS/"
 
 #TODO: Modify paths here
-OUT_PATH = "/tmp/QASR/logs"
-DATA_PATH = "/home/chiyu.zhang/tts/work_dir/aratts/TTS/recipes/qasr/test_mp" # as same as manifests_dir in training script
+OUT_PATH = "/l/users/chiyu.zhang/tts/checkpoints/qasr"
+DATA_PATH = "/home/chiyu.zhang/tts/work_dir/aratts/TTS/recipes/qasr/yourtts/test_mp" # as same as manifests_dir in training script
 DEBUG = False
+RESTORE_PATH = "/l/users/chiyu.zhang/tts/checkpoints/qasr/YourTTS-AR-QASR-February-11-2024_07+18PM-7a06436/best_model_136104.pth"  # "/root/.local/share/tts/tts_models--multilingual--multi-dataset--your_tts/model_file.pth"
 
 # If you want to do transfer learning and speedup your training you can set here the path to the original YourTTS model
-RESTORE_PATH = None  # "/root/.local/share/tts/tts_models--multilingual--multi-dataset--your_tts/model_file.pth"
 
 # This paramter is useful to debug, it skips the training epochs and just do the evaluation  and produce the test sentences
 SKIP_TRAIN_EPOCH = False
