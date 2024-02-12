@@ -103,10 +103,10 @@ def wav_to_spec(y, n_fft, hop_length, win_length, center=False):
     """
     y = y.squeeze(1)
 
-    if torch.min(y) < -1.0:
-        print("min value is ", torch.min(y))
-    if torch.max(y) > 1.0:
-        print("max value is ", torch.max(y))
+    # if torch.min(y) < -1.0:
+    #     print("min value is ", torch.min(y))
+    # if torch.max(y) > 1.0:
+    #     print("max value is ", torch.max(y))
 
     global hann_window
     dtype_device = str(y.dtype) + "_" + str(y.device)

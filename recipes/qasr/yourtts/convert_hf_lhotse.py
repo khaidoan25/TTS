@@ -41,7 +41,7 @@ def get_rec_sup(sample):
     return {"recording": recording, "supervision": supervision}
 
 def main(args):
-    speaker_df = pd.read_csv("data/speakers.tsv", sep="\t", index_col=None)
+    speaker_df = pd.read_csv(f"{args.output_dir}/speakers.tsv", sep="\t", index_col=None)
     spk2att = {}
     for _, row in speaker_df.iterrows():
         spk2att[row["speaker_id"]] = {
