@@ -46,3 +46,17 @@ python convert_hf_lhotse.py \
 - The steps to finetune XTTS is the same as training YourTTS.
 
 - Remember to modify variables in `train_gpt_xtts.py`
+
+## Evaluation
+
+### Speaker Similarity
+
+- Run `synthesize.py` script to synthesize wav files.
+
+- Download `WavLM-Large` checkpoint from [this link](https://github.com/microsoft/UniSpeech/tree/main/downstreams/speaker_verification). 
+
+- Run `evaluation/speaker_similarity/speaker_similarity.py` to get the average consine similarity score.
+
+- Requirements:
+    - `pip install s3prl[all]`
+    - `omegaconf==2.0.6`
