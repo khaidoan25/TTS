@@ -126,6 +126,7 @@ model_args = VitsArgs(
 
 VOCAB_FILE = f"{DATA_PATH}/vocab.txt"
 vocab = FairseqVocab(VOCAB_FILE)
+vocab_dict = {token: i for i, token in enumerate(vocab.vocab)}
 
 if DEBUG:
     test_sentences = []
@@ -175,9 +176,9 @@ config = VitsConfig(
     add_blank=False,
     text_cleaner="multilingual_cleaners",
     characters=CharactersConfig(
-        characters_class="TTS.tts.models.vits.FairseqVocab",
+        characters_class="TTS.tts.utils.text.characters.BaseVocabulary",
         pad="[PAD]",
-        vocab_dict=vocab.vocab,
+        vocab_dict=vocab_dict,
     ),
     epochs=EPOCHS,
     phoneme_cache_path=None,
