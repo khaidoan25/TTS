@@ -284,10 +284,10 @@ class VitsDataset(TTSDataset):
             "token_ids": token_ids,
             "token_len": len(token_ids),
             "wav": wav,
-            "wav_file": wav_filename,
             "speaker_name": item["speaker_name"],
             "language_name": item["language"],
             "audio_unique_name": item["audio_unique_name"],
+            "d_vector_file": item["d_vector_file"]
         }
 
     @property
@@ -354,6 +354,7 @@ class VitsDataset(TTSDataset):
             "audio_files": batch["wav_file"],
             "raw_text": batch["raw_text"],
             "audio_unique_names": batch["audio_unique_name"],
+            "d_vector_files": batch["d_vector_file"]
         }
 
 
@@ -1478,6 +1479,9 @@ class Vits(BaseTTS):
         if self.speaker_manager is not None and self.speaker_manager.embeddings and self.args.use_d_vector_file:
             d_vector_mapping = self.speaker_manager.embeddings
             d_vectors = [d_vector_mapping[w]["embedding"] for w in batch["audio_unique_names"]]
+            d_vectors = torch.FloatTensor(d_vectors)
+        if d_vectors is None:
+            d_vectors = [torch.load(d_vector_file) for d_vector_file in batch["d_vector_files"]]
             d_vectors = torch.FloatTensor(d_vectors)
 
         # get language ids from language names

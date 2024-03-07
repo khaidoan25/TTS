@@ -328,13 +328,15 @@ def qasr(root_path, meta_files=None, ignored_speakers=None):
     with open(f"{root_path}/speaker_id_split.json", "r") as f:
         unseen_speaker_ids = json.load(f)["test"]["unseen"]
     cuts = CutSet.from_file(f"{root_path}/qasr_cuts.jsonl.gz")
-    for sample in cuts:
+    for sample in tqdm(cuts, desc="Reading manifest file"):
         if sample.supervisions[0].speaker in unseen_speaker_ids:
             continue
+        wav_filename = sample.recording.sources[0].source
         items.append(
             {
                 "text": sample.supervisions[0].text,
-                "audio_file": sample.recording.sources[0].source,
+                "audio_file": wav_filename,
+                "d_vector_file": wav_filename.replace(".wav", ".pth"),
                 "speaker_name": sample.supervisions[0].speaker,
                 "root_path": None,
                 "audio_unique_name": sample.supervisions[0].recording_id
