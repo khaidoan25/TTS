@@ -284,6 +284,7 @@ class VitsDataset(TTSDataset):
             "token_ids": token_ids,
             "token_len": len(token_ids),
             "wav": wav,
+            "wav_file": wav_filename,
             "speaker_name": item["speaker_name"],
             "language_name": item["language"],
             "audio_unique_name": item["audio_unique_name"],
