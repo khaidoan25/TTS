@@ -105,10 +105,14 @@ class XTTSDataset(torch.utils.data.Dataset):
 
     def load_item(self, sample):
         text = str(sample["text"])
+        tseq = self.get_text(text, sample["language"])
         if "dialect" in sample.keys():
             dialect = str(sample["dialect"])
-            text = f"[{dialect}]{text}"
-        tseq = self.get_text(text, sample["language"])
+            tseq_list = tseq.tolist()
+            tseq_list.insert(1, self.tokenizer.tokenizer.token_to_id(f"[{dialect}]"))
+            with open("test.txt", "w") as f:
+                f.write(str(tseq_list))
+            tseq = torch.IntTensor(tseq_list)
         audiopath = sample["audio_file"]
         wav = load_audio(audiopath, self.sample_rate)
         if text is None or len(text.strip()) == 0:
