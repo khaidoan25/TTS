@@ -105,6 +105,9 @@ class XTTSDataset(torch.utils.data.Dataset):
 
     def load_item(self, sample):
         text = str(sample["text"])
+        if "dialect" in sample.keys():
+            dialect = str(sample["dialect"])
+            text = f"[{dialect}]{text}"
         tseq = self.get_text(text, sample["language"])
         audiopath = sample["audio_file"]
         wav = load_audio(audiopath, self.sample_rate)

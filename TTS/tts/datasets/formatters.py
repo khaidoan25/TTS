@@ -323,6 +323,27 @@ def common_voice(root_path, meta_file, ignored_speakers=None):
     return items
 
 
+def qasr_dialect(root_path, meta_files=None, ignored_speakers=None):
+    items = []
+    with open(f"{root_path}/speaker_id_split.json", "r") as f:
+        unseen_speaker_ids = json.load(f)["test"]["unseen"]
+    cuts = CutSet.from_file(f"{root_path}/qasr_cuts_dialect.jsonl.gz")
+    for sample in cuts:
+        if sample.supervisions[0].speaker in unseen_speaker_ids:
+            continue
+        items.append(
+            {
+                "text": sample.supervisions[0].text,
+                "audio_file": sample.recording.sources[0].source,
+                "speaker_name": sample.supervisions[0].speaker,
+                "root_path": None,
+                "audio_unique_name": sample.supervisions[0].recording_id,
+                "dialect": sample.custom["dialect"]
+            }
+        )
+    return items
+
+
 def qasr(root_path, meta_files=None, ignored_speakers=None):
     items = []
     with open(f"{root_path}/speaker_id_split.json", "r") as f:
